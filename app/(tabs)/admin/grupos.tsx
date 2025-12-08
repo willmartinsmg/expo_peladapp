@@ -118,7 +118,7 @@ export default function AdminGrupos() {
   const handleManageGroup = async (g: Group) => {
     if (g.id) {
       await selectGroup({ id: g.id, name: g.name, isAdmin: g.isAdmin });
-      router.push('/admin/usuarios');
+      router.push('/admin/gerenciar-grupo');
     }
   };
 
