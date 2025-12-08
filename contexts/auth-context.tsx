@@ -1,6 +1,8 @@
 import { authApi } from "@/api/auth";
+import { groupsApi } from "@/api/groups";
 import { storage } from "@/lib/storage";
 import type { AuthState, SignInCredentials, User } from "@/types/auth";
+import type { Group } from "@/types/group";
 import * as WebBrowser from 'expo-web-browser';
 import {
   createContext,
@@ -19,6 +21,10 @@ interface AuthContextData extends AuthState {
   verifyEmailCode: (email: string, code: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  selectGroup: (group: Group) => Promise<void>;
+  clearGroup: () => Promise<void>;
+  refreshGroups: () => Promise<void>;
+  hasGroups: boolean;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -31,21 +37,79 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeGroup, setActiveGroup] = useState<Group | null>(null);
+  const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
 
   // Load stored auth data on mount
   useEffect(() => {
     loadStoredAuth();
   }, []);
 
+  async function loadGroups(userData: User, storedGroupId: string | null) {
+    try {
+      setIsLoadingGroups(true);
+
+      // Try to get groups from API
+      let groups: Group[] = [];
+
+      try {
+        groups = await groupsApi.getUserGroups();
+      } catch (error) {
+        console.error('Error fetching groups from API:', error);
+        // Fallback to cached groups if API fails
+        const cachedGroups = await storage.get(storage.keys.GROUPS_CACHE);
+        if (cachedGroups) {
+          groups = JSON.parse(cachedGroups) as Group[];
+        }
+      }
+
+      // If user data has groups array from profile, merge with API data
+      if (userData.groups && userData.groups.length > 0) {
+        // Use profile data as source of truth
+        groups = userData.groups.map(g => ({
+          ...g,
+          isAdmin: userData.isAdminIn?.includes(g.id) ?? false,
+        }));
+      }
+
+      setAvailableGroups(groups);
+
+      // Restore active group if exists
+      if (storedGroupId && groups.length > 0) {
+        const restored = groups.find(g => g.id === parseInt(storedGroupId));
+        if (restored) {
+          setActiveGroup(restored);
+        } else {
+          // Group was deleted or user was removed
+          await storage.remove(storage.keys.ACTIVE_GROUP_ID);
+        }
+      }
+
+      // Cache groups
+      if (groups.length > 0) {
+        await storage.save(storage.keys.GROUPS_CACHE, JSON.stringify(groups));
+      }
+    } catch (error) {
+      console.error('Error loading groups:', error);
+    } finally {
+      setIsLoadingGroups(false);
+    }
+  }
+
   async function loadStoredAuth() {
     try {
       const storedToken = await storage.get(storage.keys.AUTH_TOKEN);
       const storedUserData = await storage.get(storage.keys.USER_DATA);
+      const storedGroupId = await storage.get(storage.keys.ACTIVE_GROUP_ID);
 
       if (storedToken && storedUserData) {
         const userData = JSON.parse(storedUserData) as User;
         setToken(storedToken);
         setUser(userData);
+
+        // Load groups and restore active group
+        await loadGroups(userData, storedGroupId);
       }
     } catch (error) {
       console.error("Error loading stored auth:", error);
@@ -74,6 +138,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Save to secure storage
       await storage.save(storage.keys.AUTH_TOKEN, response.token);
       await storage.save(storage.keys.USER_DATA, JSON.stringify(userData));
+
+      // Load groups after successful login
+      await loadGroups(userData, null);
     } catch (error) {
       console.error("Sign in error:", error);
       throw error;
@@ -105,6 +172,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Save to secure storage
       await storage.save(storage.keys.AUTH_TOKEN, response.token);
       await storage.save(storage.keys.USER_DATA, JSON.stringify(response.user));
+
+      // Load groups after successful login
+      await loadGroups(response.user, null);
     } catch (error) {
       console.error("Error verifying code:", error);
       throw error;
@@ -142,6 +212,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Save to secure storage
           await storage.save(storage.keys.AUTH_TOKEN, token);
           await storage.save(storage.keys.USER_DATA, JSON.stringify(userData));
+
+          // Load groups after successful login
+          await loadGroups(userData, null);
         }
       }
     } catch (error) {
@@ -159,6 +232,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Clear state
       setToken(null);
       setUser(null);
+      setActiveGroup(null);
+      setAvailableGroups([]);
 
       // Clear storage
       await storage.clear();
@@ -169,16 +244,52 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  async function selectGroup(group: Group) {
+    try {
+      setActiveGroup(group);
+      await storage.save(storage.keys.ACTIVE_GROUP_ID, group.id.toString());
+    } catch (error) {
+      console.error('Error selecting group:', error);
+      throw error;
+    }
+  }
+
+  async function clearGroup() {
+    setActiveGroup(null);
+    await storage.remove(storage.keys.ACTIVE_GROUP_ID);
+  }
+
+  async function refreshGroups() {
+    if (!user) return;
+
+    try {
+      setIsLoadingGroups(true);
+      const profile = await authApi.getProfile();
+      await loadGroups(profile, activeGroup?.id.toString() || null);
+    } catch (error) {
+      console.error('Error refreshing groups:', error);
+    } finally {
+      setIsLoadingGroups(false);
+    }
+  }
+
   const value: AuthContextData = {
     user,
     token,
     isLoading,
     isAuthenticated: !!user && !!token,
+    activeGroup,
+    availableGroups,
+    isLoadingGroups,
+    hasGroups: availableGroups.length > 0,
     signIn,
     signInWithEmail,
     verifyEmailCode,
     signInWithGoogle,
     signOut,
+    selectGroup,
+    clearGroup,
+    refreshGroups,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

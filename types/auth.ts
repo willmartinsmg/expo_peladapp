@@ -1,3 +1,5 @@
+import type { Group } from './group';
+
 export interface CollaboratorBasicInfo {
   NUMEMP: number;
   TIPCOL: number;
@@ -8,10 +10,14 @@ export interface CollaboratorBasicInfo {
 
 export interface User {
   id: number;
-  cpf: number;
+  cpf?: number;
+  email?: string;
   name?: string;
   apelido?: string;
+  avatarUrl?: string;
+  isAdminIn?: number[];
   collaborator?: CollaboratorBasicInfo;
+  groups?: Group[];
 }
 
 export interface SignInCredentials {
@@ -56,4 +62,7 @@ export interface AuthState {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  activeGroup: Group | null;
+  availableGroups: Group[];
+  isLoadingGroups: boolean;
 }

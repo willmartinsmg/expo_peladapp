@@ -11,9 +11,14 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '@/contexts/auth-context';
+import { useThemedStyles, useColorScheme } from '@/hooks';
+import { Colors } from '@/constants/theme';
+import type { ColorScheme } from '@/types/theme';
 
 export default function EmailScreen() {
   const { signInWithEmail } = useAuth();
+  const styles = useThemedStyles(createStyles);
+  const colorScheme = useColorScheme();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,7 +63,7 @@ export default function EmailScreen() {
           <TextInput
             style={styles.input}
             placeholder="william.martins@me.com"
-            placeholderTextColor="#6b7280"
+            placeholderTextColor={Colors[colorScheme].textSecondary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -114,10 +119,10 @@ export default function EmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (scheme: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1f2e',
+    backgroundColor: Colors[scheme].background,
   },
   content: {
     flex: 1,
@@ -127,12 +132,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: Colors[scheme].text,
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
     marginBottom: 32,
   },
   formContainer: {
@@ -140,18 +145,18 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#fff',
+    color: Colors[scheme].text,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#2d3748',
+    backgroundColor: Colors[scheme].backgroundSecondary,
     borderWidth: 2,
-    borderColor: '#4a5568',
+    borderColor: Colors[scheme].border,
     borderRadius: 8,
     paddingVertical: 14,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: '#fff',
+    color: Colors[scheme].text,
     marginBottom: 16,
   },
   buttonRow: {
@@ -167,23 +172,23 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   sendButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: Colors[scheme].primary,
   },
   backButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#4a5568',
+    borderColor: Colors[scheme].border,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors[scheme].text,
   },
   backButtonText: {
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
   },
   error: {
-    color: '#ef4444',
+    color: Colors[scheme].error,
     fontSize: 14,
     marginBottom: 12,
   },
@@ -192,16 +197,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   alreadyHaveCodeText: {
-    color: '#60a5fa',
+    color: Colors[scheme].primary,
     fontSize: 14,
     textDecorationLine: 'underline',
   },
   infoBox: {
-    backgroundColor: '#1e3a5f',
+    backgroundColor: Colors[scheme].backgroundSecondary,
     borderRadius: 12,
     padding: 20,
     flexDirection: 'row',
     gap: 16,
+    borderWidth: 1,
+    borderColor: Colors[scheme].border,
   },
   infoIcon: {
     fontSize: 24,
@@ -212,12 +219,12 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors[scheme].text,
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
     marginBottom: 4,
   },
 });

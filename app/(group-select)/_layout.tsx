@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router';
-import { useColorScheme } from '@/hooks';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 
-export default function AuthLayout() {
+export default function GroupSelectLayout() {
   const colorScheme = useColorScheme();
 
   return (
@@ -10,11 +10,10 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: Colors[colorScheme].background },
+        gestureEnabled: false, // Prevent going back to auth screens
       }}
     >
-      <Stack.Screen name="login" />
-      <Stack.Screen name="email" />
-      <Stack.Screen name="verify" />
+      <Stack.Screen name="select-group" />
     </Stack>
   );
 }

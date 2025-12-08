@@ -7,6 +7,7 @@ import type {
   SendCodeResponse,
   VerifyCodeRequest,
   VerifyCodeResponse,
+  User,
 } from '@/types/auth';
 
 /**
@@ -64,6 +65,14 @@ export const authApi = {
     } catch {
       return false;
     }
+  },
+
+  /**
+   * Get user profile
+   * Uses apiClient - token is added automatically
+   */
+  async getProfile(): Promise<User> {
+    return await apiClient.get(apiEndpoints.auth.profile).json<User>();
   },
 
   /**

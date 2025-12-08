@@ -8,6 +8,8 @@ import { Platform } from 'react-native';
 const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
   USER_DATA: 'user_data',
+  ACTIVE_GROUP_ID: 'active_group_id',
+  GROUPS_CACHE: 'groups_cache',
 } as const;
 
 /**
@@ -50,6 +52,8 @@ async function remove(key: string): Promise<void> {
 async function clear(): Promise<void> {
   await remove(STORAGE_KEYS.AUTH_TOKEN);
   await remove(STORAGE_KEYS.USER_DATA);
+  await remove(STORAGE_KEYS.ACTIVE_GROUP_ID);
+  await remove(STORAGE_KEYS.GROUPS_CACHE);
 }
 
 export const storage = {

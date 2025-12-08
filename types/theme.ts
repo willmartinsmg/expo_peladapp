@@ -12,6 +12,7 @@ export interface ThemeColors {
   textSecondary: string;
   background: string;
   backgroundSecondary: string;
+  card: string;
   border: string;
   icon: string;
   tint: string;

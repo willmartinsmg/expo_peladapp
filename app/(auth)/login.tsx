@@ -72,23 +72,23 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (scheme: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1f2e',
+    backgroundColor: Colors[scheme].background,
     paddingHorizontal: 20,
     justifyContent: 'center',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#fff',
+    color: Colors[scheme].text,
     textAlign: 'center',
     marginBottom: 16,
   },
   subtitle: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
     textAlign: 'center',
     marginBottom: 48,
   },
@@ -105,30 +105,30 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   googleButton: {
-    backgroundColor: '#4285f4',
+    backgroundColor: Colors[scheme].info,
   },
   emailButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#4a5568',
+    borderColor: Colors[scheme].border,
     borderStyle: 'dashed',
   },
   icon: {
     marginRight: 12,
   },
   buttonText: {
-    color: '#fff',
+    color: Colors[scheme].text,
     fontSize: 16,
     fontWeight: '600',
   },
   divider: {
     textAlign: 'center',
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
     fontSize: 14,
     marginVertical: 8,
   },
   error: {
-    color: '#ef4444',
+    color: Colors[scheme].error,
     textAlign: 'center',
     marginTop: 16,
     fontSize: 14,
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backLinkText: {
-    color: '#60a5fa',
+    color: Colors[scheme].primary,
     fontSize: 16,
   },
 });

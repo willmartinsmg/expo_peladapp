@@ -13,7 +13,7 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, activeGroup, hasGroups } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -21,20 +21,31 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inGroupSelectGroup = segments[0] === '(group-select)';
+    const inTabsGroup = segments[0] === '(tabs)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to login if not authenticated
+      // Not authenticated -> redirect to login
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to tabs if authenticated
-      router.replace('/(tabs)');
+      // Authenticated and in auth screens
+      // Check if needs group selection
+      if (hasGroups && !activeGroup) {
+        router.replace('/(group-select)/select-group');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } else if (isAuthenticated && !activeGroup && hasGroups && inTabsGroup) {
+      // Authenticated, has groups, no active group, trying to access tabs
+      router.replace('/(group-select)/select-group');
     }
-  }, [isAuthenticated, isLoading, segments, router]);
+  }, [isAuthenticated, isLoading, segments, router, activeGroup, hasGroups]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(group-select)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>

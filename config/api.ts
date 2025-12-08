@@ -23,6 +23,7 @@ export const apiEndpoints = {
     sendCode: 'auth/send-code',
     verifyCode: 'auth/verify-code',
     googleLogin: 'auth/google/login',
+    profile: 'auth/profile',
   },
   users: {
     profile: 'users/profile',
@@ -44,5 +45,10 @@ export const apiEndpoints = {
   general: {
     filiais: 'general/filial',
     costCenters: 'general/costcenter',
+  },
+  organization: {
+    list: 'organization',
+    detail: 'organization',
+    users: 'organization/users',
   },
 } as const;

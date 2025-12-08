@@ -11,10 +11,14 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '@/contexts/auth-context';
+import { useThemedStyles } from '@/hooks';
+import { Colors } from '@/constants/theme';
+import type { ColorScheme } from '@/types/theme';
 
 export default function VerifyScreen() {
   const { email: emailParam } = useLocalSearchParams<{ email?: string }>();
   const { verifyEmailCode } = useAuth();
+  const styles = useThemedStyles(createStyles);
   const [email] = useState(emailParam || '');
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -145,10 +149,10 @@ export default function VerifyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (scheme: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1f2e',
+    backgroundColor: Colors[scheme].background,
   },
   content: {
     flex: 1,
@@ -158,16 +162,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: Colors[scheme].text,
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
     marginBottom: 32,
   },
   emailText: {
-    color: '#fff',
+    color: Colors[scheme].text,
     fontWeight: '600',
   },
   formContainer: {
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#fff',
+    color: Colors[scheme].text,
     marginBottom: 16,
   },
   codeInputContainer: {
@@ -186,18 +190,18 @@ const styles = StyleSheet.create({
   codeInput: {
     flex: 1,
     aspectRatio: 1,
-    backgroundColor: '#2d3748',
+    backgroundColor: Colors[scheme].backgroundSecondary,
     borderWidth: 2,
-    borderColor: '#4a5568',
+    borderColor: Colors[scheme].border,
     borderRadius: 12,
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#fff',
+    color: Colors[scheme].text,
     textAlign: 'center',
   },
   codeInputFilled: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#1e3a5f',
+    borderColor: Colors[scheme].primary,
+    backgroundColor: scheme === 'dark' ? Colors[scheme].backgroundSecondary : Colors[scheme].primaryLight + '20',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -212,7 +216,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   verifyButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: Colors[scheme].primary,
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -220,18 +224,18 @@ const styles = StyleSheet.create({
   backButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#4a5568',
+    borderColor: Colors[scheme].border,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors[scheme].text,
   },
   backButtonText: {
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
   },
   error: {
-    color: '#ef4444',
+    color: Colors[scheme].error,
     fontSize: 14,
     marginBottom: 12,
     textAlign: 'center',
@@ -241,7 +245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelText: {
-    color: '#9ca3af',
+    color: Colors[scheme].textSecondary,
     fontSize: 14,
     textDecorationLine: 'underline',
   },
