@@ -2,10 +2,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/contexts/auth-context';
+import { useThemedStyles } from '@/hooks';
+import { Colors } from '@/constants/theme';
+import type { ColorScheme } from '@/types/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth();
+  const styles = useThemedStyles(createStyles);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
