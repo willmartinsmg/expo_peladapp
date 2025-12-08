@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "expo_peladapp",
-    "slug": "expo_peladapp",
+    "name": "Peladapp",
+    "slug": "peladapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -38,7 +38,9 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
