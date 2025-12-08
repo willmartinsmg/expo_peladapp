@@ -1,21 +1,20 @@
-import { useEffect, useState } from 'react';
+import { Colors } from "@/constants/theme";
+import { useAuth, useThemedStyles } from "@/hooks";
+import { apiClient } from "@/lib/api-client";
+import type { ColorScheme } from "@/types/theme";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
   ActivityIndicator,
-  ScrollView,
-  Alert,
-  TextInput,
   Modal,
-} from 'react-native';
-import { Stack } from 'expo-router';
-import { useAuth, useThemedStyles } from '@/hooks';
-import { Colors } from '@/constants/theme';
-import type { ColorScheme } from '@/types/theme';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { apiClient } from '@/lib/api-client';
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 interface User {
   id: number;
@@ -34,7 +33,7 @@ export default function GestaoUsuariosGrupo() {
 
   // Estados para adicionar usuario
   const [showAddModal, setShowAddModal] = useState(false);
-  const [emailToAdd, setEmailToAdd] = useState('');
+  const [emailToAdd, setEmailToAdd] = useState("");
   const [addingUser, setAddingUser] = useState(false);
 
   // Estados para remocao
@@ -63,8 +62,7 @@ export default function GestaoUsuariosGrupo() {
         .json<User[]>();
       setUsers(response);
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
-      Alert.alert('Erro', 'Não foi possível carregar a lista de usuários.');
+      console.error("Erro ao buscar usuários:", error);
     } finally {
       setLoading(false);
     }
@@ -75,31 +73,18 @@ export default function GestaoUsuariosGrupo() {
 
     try {
       setAddingUser(true);
-      await apiClient.post('organization/add-member', {
+      await apiClient.post("organization/add-member", {
         json: {
           email: emailToAdd.trim(),
           organizationId: Number(groupId),
         },
       });
 
-      Alert.alert('Sucesso!', 'Usuário adicionado ao grupo com sucesso.');
-      setEmailToAdd('');
+      setEmailToAdd("");
       setShowAddModal(false);
       await fetchUsers();
     } catch (error: any) {
-      console.error('Erro ao adicionar usuário:', error);
-
-      const status = error.response?.status;
-      if (status === 404) {
-        Alert.alert('Erro', 'Usuário não encontrado com este email.');
-      } else if (status === 409) {
-        Alert.alert('Info', 'Este usuário já faz parte do grupo.');
-      } else {
-        Alert.alert(
-          'Erro',
-          error.response?.data?.message || 'Não foi possível adicionar o usuário.'
-        );
-      }
+      console.error("Erro ao adicionar usuário:", error);
     } finally {
       setAddingUser(false);
     }
@@ -110,28 +95,17 @@ export default function GestaoUsuariosGrupo() {
 
     try {
       setRemovingUser(true);
-      await apiClient.post('organization/remove-member', {
+      await apiClient.post("organization/remove-member", {
         json: {
           userId: userToRemove.id,
           organizationId: Number(groupId),
         },
       });
 
-      Alert.alert('Sucesso!', `${userToRemove.name} foi removido do grupo.`);
       setUserToRemove(null);
       await fetchUsers();
     } catch (error: any) {
-      console.error('Erro ao remover usuário:', error);
-
-      const status = error.response?.status;
-      if (status === 403) {
-        Alert.alert('Erro', 'Você não tem permissão para remover este usuário.');
-      } else {
-        Alert.alert(
-          'Erro',
-          error.response?.data?.message || 'Não foi possível remover o usuário.'
-        );
-      }
+      console.error("Erro ao remover usuário:", error);
     } finally {
       setRemovingUser(false);
     }
@@ -142,28 +116,16 @@ export default function GestaoUsuariosGrupo() {
 
     try {
       setSettingAdmin(user.id);
-      await apiClient.post('organization/set-admin', {
+      await apiClient.post("organization/set-admin", {
         json: {
           userId: user.id,
           organizationId: Number(groupId),
         },
       });
 
-      Alert.alert('Sucesso!', `${user.name} agora é administrador do grupo.`);
       await fetchUsers();
     } catch (error: any) {
-      console.error('Erro ao definir admin:', error);
-
-      const status = error.response?.status;
-      if (status === 409) {
-        Alert.alert('Info', 'Este usuário já é administrador.');
-      } else {
-        Alert.alert(
-          'Erro',
-          error.response?.data?.message ||
-            'Não foi possível definir como administrador.'
-        );
-      }
+      console.error("Erro ao definir admin:", error);
     } finally {
       setSettingAdmin(null);
     }
@@ -175,37 +137,21 @@ export default function GestaoUsuariosGrupo() {
     // Verificar se há mais de um admin
     const adminCount = users.filter((u) => u.admin).length;
     if (adminCount <= 1) {
-      Alert.alert('Erro', 'O grupo deve ter pelo menos um administrador.');
       return;
     }
 
     try {
       setRemovingAdmin(user.id);
-      await apiClient.post('organization/remove-admin', {
+      await apiClient.post("organization/remove-admin", {
         json: {
           userId: user.id,
           organizationId: Number(groupId),
         },
       });
 
-      Alert.alert('Sucesso!', `${user.name} não é mais administrador do grupo.`);
       await fetchUsers();
     } catch (error: any) {
-      console.error('Erro ao remover admin:', error);
-
-      const status = error.response?.status;
-      if (status === 403) {
-        Alert.alert(
-          'Erro',
-          'Você não tem permissão para remover este administrador.'
-        );
-      } else {
-        Alert.alert(
-          'Erro',
-          error.response?.data?.message ||
-            'Não foi possível remover como administrador.'
-        );
-      }
+      console.error("Erro ao remover admin:", error);
     } finally {
       setRemovingAdmin(null);
     }
@@ -216,7 +162,7 @@ export default function GestaoUsuariosGrupo() {
       <View style={styles.container}>
         <Stack.Screen
           options={{
-            title: 'Gerenciar Usuários',
+            title: "Gerenciar Usuários",
             headerShown: true,
           }}
         />
@@ -232,11 +178,14 @@ export default function GestaoUsuariosGrupo() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          title: 'Gerenciar Usuários',
+          title: "Gerenciar Usuários",
           headerShown: true,
         }}
       />
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+      >
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Gerenciar Usuários</Text>
@@ -255,13 +204,19 @@ export default function GestaoUsuariosGrupo() {
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardHeaderText}>Lista de usuários do grupo</Text>
+            <Text style={styles.cardHeaderText}>
+              Lista de usuários do grupo
+            </Text>
             <Text style={styles.cardHeaderCount}>Total: {users.length}</Text>
           </View>
 
           {users.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <MaterialIcons name="people" size={48} color={Colors.dark.textSecondary} />
+              <MaterialIcons
+                name="people"
+                size={48}
+                color={Colors.dark.textSecondary}
+              />
               <Text style={styles.emptyText}>
                 Nenhum usuário encontrado neste grupo.
               </Text>
@@ -270,49 +225,50 @@ export default function GestaoUsuariosGrupo() {
             users.map((user) => (
               <View
                 key={user.id}
-                style={[
-                  styles.userItem,
-                  user.admin && styles.userItemAdmin,
-                ]}
+                style={[styles.userItem, user.admin && styles.userItemAdmin]}
               >
-                <View style={styles.userInfo}>
-                  <View
-                    style={[
-                      styles.userAvatar,
-                      user.admin && styles.userAvatarAdmin,
-                    ]}
-                  >
-                    {user.admin ? (
-                      <MaterialIcons name="star" size={20} color="#F59E0B" />
-                    ) : (
-                      <Text style={styles.userAvatarText}>
-                        {user.name?.charAt(0)?.toUpperCase() ||
-                          user.email.charAt(0).toUpperCase()}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={styles.userDetails}>
-                    <View style={styles.userNameRow}>
-                      <Text style={styles.userName}>
-                        {user.name || 'Sem nome'}
+                <View style={styles.userContent}>
+                  <View style={styles.userHeader}>
+                    <View
+                      style={[
+                        styles.userAvatar,
+                        user.admin && styles.userAvatarAdmin,
+                      ]}
+                    >
+                      {user.admin ? (
+                        <MaterialIcons name="star" size={20} color="#F59E0B" />
+                      ) : (
+                        <Text style={styles.userAvatarText}>
+                          {user.name?.charAt(0)?.toUpperCase() ||
+                            user.email.charAt(0).toUpperCase()}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.userInfo}>
+                      <Text style={styles.userName} numberOfLines={1}>
+                        {user.name || "Sem nome"}
                       </Text>
                       {user.admin && (
                         <View style={styles.adminBadge}>
-                          <MaterialIcons name="shield" size={12} color="#F59E0B" />
-                          <Text style={styles.adminBadgeText}>
-                            Administrador
-                          </Text>
+                          <MaterialIcons
+                            name="shield"
+                            size={10}
+                            color="#F59E0B"
+                          />
+                          <Text style={styles.adminBadgeText}>Admin</Text>
                         </View>
                       )}
                     </View>
-                    <View style={styles.userEmailRow}>
-                      <MaterialIcons
-                        name="email"
-                        size={14}
-                        color={Colors.dark.textSecondary}
-                      />
-                      <Text style={styles.userEmail}>{user.email}</Text>
-                    </View>
+                  </View>
+                  <View style={styles.userEmailRow}>
+                    <MaterialIcons
+                      name="email"
+                      size={13}
+                      color={Colors.dark.textSecondary}
+                    />
+                    <Text style={styles.userEmail} numberOfLines={1}>
+                      {user.email}
+                    </Text>
                   </View>
                 </View>
 
@@ -327,9 +283,13 @@ export default function GestaoUsuariosGrupo() {
                         <ActivityIndicator size="small" color="#F59E0B" />
                       ) : (
                         <>
-                          <MaterialIcons name="star" size={16} color="#F59E0B" />
+                          <MaterialIcons
+                            name="star"
+                            size={16}
+                            color="#F59E0B"
+                          />
                           <Text style={styles.promoteButtonText}>
-                            Promover
+                            Promover a Admin
                           </Text>
                         </>
                       )}
@@ -353,7 +313,7 @@ export default function GestaoUsuariosGrupo() {
                             color="#EF4444"
                           />
                           <Text style={styles.demoteButtonText}>
-                            Remover Admin
+                            Remover de Admin
                           </Text>
                         </>
                       )}
@@ -364,7 +324,7 @@ export default function GestaoUsuariosGrupo() {
                     style={styles.removeButton}
                     onPress={() => setUserToRemove(user)}
                   >
-                    <MaterialIcons name="delete" size={20} color="#EF4444" />
+                    <MaterialIcons name="delete" size={18} color="#EF4444" />
                   </Pressable>
                 </View>
               </View>
@@ -384,7 +344,10 @@ export default function GestaoUsuariosGrupo() {
           style={styles.modalOverlay}
           onPress={() => setShowAddModal(false)}
         >
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+          <Pressable
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Adicionar Usuário ao Grupo</Text>
               <Pressable onPress={() => setShowAddModal(false)}>
@@ -422,7 +385,8 @@ export default function GestaoUsuariosGrupo() {
                 style={[
                   styles.modalButton,
                   styles.modalAddButton,
-                  (!emailToAdd.trim() || addingUser) && styles.modalButtonDisabled,
+                  (!emailToAdd.trim() || addingUser) &&
+                    styles.modalButtonDisabled,
                 ]}
                 onPress={handleAddUser}
                 disabled={addingUser || !emailToAdd.trim()}
@@ -452,7 +416,10 @@ export default function GestaoUsuariosGrupo() {
           style={styles.modalOverlay}
           onPress={() => setUserToRemove(null)}
         >
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+          <Pressable
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.deleteModalHeader}>
               <View style={styles.deleteIcon}>
                 <MaterialIcons name="delete" size={24} color="#EF4444" />
@@ -460,11 +427,11 @@ export default function GestaoUsuariosGrupo() {
               <View style={styles.deleteModalText}>
                 <Text style={styles.modalTitle}>Remover usuário do grupo</Text>
                 <Text style={styles.deleteModalDescription}>
-                  Tem certeza que deseja remover{' '}
+                  Tem certeza que deseja remover{" "}
                   <Text style={styles.deleteModalUserName}>
                     {userToRemove?.name || userToRemove?.email}
-                  </Text>{' '}
-                  do grupo{' '}
+                  </Text>{" "}
+                  do grupo{" "}
                   <Text style={styles.deleteModalGroupName}>
                     {activeGroup?.name}
                   </Text>
@@ -527,8 +494,8 @@ const createStyles = (scheme: ColorScheme) =>
     },
     loadingContainer: {
       flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       gap: 12,
     },
     loadingText: {
@@ -536,14 +503,14 @@ const createStyles = (scheme: ColorScheme) =>
       color: Colors[scheme].textSecondary,
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
       marginBottom: 24,
     },
     title: {
       fontSize: 24,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: Colors[scheme].text,
       marginBottom: 4,
     },
@@ -552,34 +519,34 @@ const createStyles = (scheme: ColorScheme) =>
       color: Colors[scheme].textSecondary,
     },
     groupName: {
-      fontWeight: '600',
+      fontWeight: "600",
       color: Colors[scheme].text,
     },
     addButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
-      backgroundColor: '#10B981',
+      backgroundColor: "#10B981",
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: 8,
     },
     addButtonText: {
-      color: '#fff',
+      color: "#fff",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     card: {
       backgroundColor: Colors[scheme].card,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: Colors[scheme].border,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     cardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderBottomWidth: 1,
@@ -595,154 +562,154 @@ const createStyles = (scheme: ColorScheme) =>
     },
     emptyContainer: {
       padding: 48,
-      alignItems: 'center',
+      alignItems: "center",
       gap: 12,
     },
     emptyText: {
       fontSize: 14,
       color: Colors[scheme].textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
     },
     userItem: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: Colors[scheme].border,
     },
     userItemAdmin: {
-      backgroundColor: '#FEF3C7',
+      backgroundColor: "#FEF3C7",
       borderLeftWidth: 4,
-      borderLeftColor: '#F59E0B',
+      borderLeftColor: "#F59E0B",
+    },
+    userContent: {
+      gap: 10,
+      marginBottom: 12,
+    },
+    userHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
     },
     userInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
       flex: 1,
+      gap: 4,
     },
     userAvatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: '#3B82F6',
-      alignItems: 'center',
-      justifyContent: 'center',
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: "#3B82F6",
+      alignItems: "center",
+      justifyContent: "center",
     },
     userAvatarAdmin: {
-      backgroundColor: '#FDE68A',
+      backgroundColor: "#FDE68A",
     },
     userAvatarText: {
       fontSize: 18,
-      fontWeight: 'bold',
-      color: '#fff',
-    },
-    userDetails: {
-      flex: 1,
-    },
-    userNameRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 4,
+      fontWeight: "bold",
+      color: "#fff",
     },
     userName: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "600",
       color: Colors[scheme].text,
+      lineHeight: 20,
     },
     adminBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      paddingHorizontal: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      paddingHorizontal: 6,
       paddingVertical: 2,
-      borderRadius: 12,
-      backgroundColor: '#FDE68A',
+      borderRadius: 8,
+      backgroundColor: "#FDE68A",
+      alignSelf: "flex-start",
     },
     adminBadgeText: {
       fontSize: 10,
-      fontWeight: '600',
-      color: '#92400E',
+      fontWeight: "600",
+      color: "#92400E",
     },
     userEmailRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingLeft: 56,
     },
     userEmail: {
-      fontSize: 14,
+      fontSize: 13,
       color: Colors[scheme].textSecondary,
+      flex: 1,
     },
     userActions: {
-      flexDirection: 'row',
-      gap: 8,
-      alignItems: 'center',
+      flexDirection: "row",
+      gap: 6,
+      alignItems: "center",
+      flexWrap: "wrap",
     },
     promoteButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 6,
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 6,
-      backgroundColor: '#FEF3C7',
+      backgroundColor: "#FEF3C7",
       borderWidth: 1,
-      borderColor: '#FDE68A',
+      borderColor: "#FDE68A",
     },
     promoteButtonText: {
       fontSize: 12,
-      fontWeight: '600',
-      color: '#92400E',
+      fontWeight: "600",
+      color: "#92400E",
     },
     demoteButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 6,
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 6,
-      backgroundColor: '#FEE2E2',
+      backgroundColor: "#FEE2E2",
       borderWidth: 1,
-      borderColor: '#FECACA',
+      borderColor: "#FECACA",
     },
     demoteButtonText: {
       fontSize: 12,
-      fontWeight: '600',
-      color: '#991B1B',
+      fontWeight: "600",
+      color: "#991B1B",
     },
     removeButton: {
       width: 36,
       height: 36,
       borderRadius: 6,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       backgroundColor: Colors[scheme].backgroundSecondary,
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
     },
     modalContent: {
       backgroundColor: Colors[scheme].card,
       borderRadius: 12,
       padding: 24,
-      width: '90%',
+      width: "90%",
       maxWidth: 400,
     },
     modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 16,
     },
     modalTitle: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: Colors[scheme].text,
     },
     modalBody: {
@@ -750,7 +717,7 @@ const createStyles = (scheme: ColorScheme) =>
     },
     modalLabel: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
       color: Colors[scheme].text,
       marginBottom: 8,
     },
@@ -765,16 +732,16 @@ const createStyles = (scheme: ColorScheme) =>
       backgroundColor: Colors[scheme].background,
     },
     modalActions: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
+      flexDirection: "row",
+      justifyContent: "flex-end",
       gap: 8,
     },
     modalButton: {
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
     modalButtonDisabled: {
@@ -786,18 +753,18 @@ const createStyles = (scheme: ColorScheme) =>
     modalCancelButtonText: {
       color: Colors[scheme].text,
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     modalAddButton: {
-      backgroundColor: '#10B981',
+      backgroundColor: "#10B981",
     },
     modalAddButtonText: {
-      color: '#fff',
+      color: "#fff",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     deleteModalHeader: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       marginBottom: 24,
     },
@@ -805,9 +772,9 @@ const createStyles = (scheme: ColorScheme) =>
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: '#FEE2E2',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: "#FEE2E2",
+      alignItems: "center",
+      justifyContent: "center",
     },
     deleteModalText: {
       flex: 1,
@@ -819,25 +786,25 @@ const createStyles = (scheme: ColorScheme) =>
       lineHeight: 20,
     },
     deleteModalUserName: {
-      fontWeight: '600',
+      fontWeight: "600",
       color: Colors[scheme].text,
     },
     deleteModalGroupName: {
-      fontWeight: '600',
+      fontWeight: "600",
       color: Colors[scheme].text,
     },
     deleteModalWarning: {
       fontSize: 12,
-      color: '#EF4444',
+      color: "#EF4444",
       marginTop: 12,
       lineHeight: 18,
     },
     modalDeleteButton: {
-      backgroundColor: '#EF4444',
+      backgroundColor: "#EF4444",
     },
     modalDeleteButtonText: {
-      color: '#fff',
+      color: "#fff",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });

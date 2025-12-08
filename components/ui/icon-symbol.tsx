@@ -19,8 +19,10 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'person.3.fill': 'group',
+  'person.fill': 'person',
   'gamecontroller.fill': 'sports-esports',
   'lock.fill': 'lock',
+  'gear': 'settings',
 } as IconMapping;
 
 /**

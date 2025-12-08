@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  Alert,
   TextInput,
   Modal,
 } from 'react-native';
@@ -82,11 +81,9 @@ export default function AdminGrupos() {
       });
 
       // Redirecionar para o dashboard
-      Alert.alert('Sucesso', 'Grupo criado com sucesso!');
       router.replace('/(tabs)');
     } catch (err: any) {
       setError(err?.message || 'Erro ao criar grupo');
-      Alert.alert('Erro', err?.message || 'Erro ao criar grupo');
     } finally {
       setCreating(false);
     }
@@ -111,10 +108,8 @@ export default function AdminGrupos() {
       });
       cancelEdit();
       fetchGroups();
-      Alert.alert('Sucesso', 'Grupo atualizado com sucesso!');
     } catch (err: any) {
       setError(err?.message || 'Erro ao atualizar grupo');
-      Alert.alert('Erro', err?.message || 'Erro ao atualizar grupo');
     } finally {
       setSaving(false);
     }
@@ -138,10 +133,8 @@ export default function AdminGrupos() {
       await apiClient.delete(`organization/${deletingGroup.id}`);
       setDeletingGroup(null);
       fetchGroups();
-      Alert.alert('Sucesso', 'Grupo excluído com sucesso!');
     } catch (err: any) {
       setError(err?.message || 'Erro ao excluir grupo');
-      Alert.alert('Erro', err?.message || 'Erro ao excluir grupo');
     } finally {
       setDeleting(false);
     }
@@ -195,84 +188,115 @@ export default function AdminGrupos() {
           {!loading &&
             groups.map((g) => (
               <View key={g.id} style={styles.groupItem}>
-                <View style={styles.groupInfo}>
-                  <View
-                    style={[
-                      styles.groupAvatar,
-                      g.isAdmin && styles.groupAvatarAdmin,
-                    ]}
-                  >
-                    <Text style={styles.groupAvatarText}>
-                      {g.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.groupDetails}>
-                    {editingId === g.id ? (
+                {editingId === g.id ? (
+                  <View style={styles.groupEditContainer}>
+                    <View style={styles.groupEditHeader}>
+                      <View style={styles.groupAvatar}>
+                        <Text style={styles.groupAvatarText}>
+                          {g.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
                       <TextInput
                         style={styles.groupInput}
                         value={editingName}
                         onChangeText={setEditingName}
                         autoFocus
+                        placeholder="Nome do grupo"
+                        placeholderTextColor={Colors.dark.textSecondary}
                       />
-                    ) : (
-                      <Text style={styles.groupName}>{g.name}</Text>
-                    )}
-                    <Text style={styles.groupRole}>
-                      {g.isAdmin ? 'Admin' : 'Membro'}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.groupActions}>
-                  {editingId === g.id ? (
-                    <>
+                    </View>
+                    <View style={styles.groupEditActions}>
                       <Pressable
-                        style={[styles.actionButton, styles.saveButton]}
+                        style={[styles.editActionButton, styles.cancelEditButton]}
+                        onPress={cancelEdit}
+                      >
+                        <MaterialIcons name="close" size={18} color="#666" />
+                        <Text style={styles.cancelEditButtonText}>Cancelar</Text>
+                      </Pressable>
+                      <Pressable
+                        style={[styles.editActionButton, styles.saveEditButton]}
                         onPress={handleSave}
                         disabled={saving}
                       >
                         {saving ? (
                           <ActivityIndicator size="small" color="#fff" />
                         ) : (
-                          <MaterialIcons name="save" size={20} color="#fff" />
+                          <>
+                            <MaterialIcons name="check" size={18} color="#fff" />
+                            <Text style={styles.saveEditButtonText}>Salvar</Text>
+                          </>
                         )}
                       </Pressable>
-                      <Pressable
-                        style={[styles.actionButton, styles.cancelButton]}
-                        onPress={cancelEdit}
+                    </View>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.groupContent}>
+                      <View
+                        style={[
+                          styles.groupAvatar,
+                          g.isAdmin && styles.groupAvatarAdmin,
+                        ]}
                       >
-                        <MaterialIcons name="close" size={20} color="#666" />
-                      </Pressable>
-                    </>
-                  ) : (
-                    <>
-                      {g.isAdmin && (
-                        <>
-                          <Pressable
-                            style={[styles.actionButton, styles.manageButton]}
-                            onPress={() => handleManageGroup(g)}
+                        <Text style={styles.groupAvatarText}>
+                          {g.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={styles.groupInfo}>
+                        <Text style={styles.groupName} numberOfLines={1}>
+                          {g.name}
+                        </Text>
+                        <View style={styles.groupBadgeContainer}>
+                          <View
+                            style={[
+                              styles.groupBadge,
+                              g.isAdmin ? styles.adminBadge : styles.memberBadge,
+                            ]}
                           >
-                            <Text style={styles.manageButtonText}>
-                              Gerenciar
+                            <MaterialIcons
+                              name={g.isAdmin ? 'shield' : 'person'}
+                              size={12}
+                              color={g.isAdmin ? '#F59E0B' : '#6B7280'}
+                            />
+                            <Text
+                              style={[
+                                styles.groupBadgeText,
+                                g.isAdmin ? styles.adminBadgeText : styles.memberBadgeText,
+                              ]}
+                            >
+                              {g.isAdmin ? 'Admin' : 'Membro'}
                             </Text>
-                          </Pressable>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                    {g.isAdmin && (
+                      <View style={styles.groupActions}>
+                        <Pressable
+                          style={styles.manageButton}
+                          onPress={() => handleManageGroup(g)}
+                        >
+                          <MaterialIcons name="settings" size={18} color="#6366F1" />
+                          <Text style={styles.manageButtonText}>Gerenciar</Text>
+                        </Pressable>
+                        <View style={styles.groupSecondaryActions}>
                           <Pressable
-                            style={[styles.actionButton, styles.editButton]}
+                            style={styles.iconButton}
                             onPress={() => startEdit(g)}
                           >
-                            <MaterialIcons name="edit" size={20} color="#fff" />
+                            <MaterialIcons name="edit" size={20} color="#F59E0B" />
                           </Pressable>
                           <Pressable
-                            style={[styles.actionButton, styles.deleteButton]}
+                            style={styles.iconButton}
                             onPress={() => openDeleteModal(g)}
                           >
-                            <MaterialIcons name="delete" size={20} color="#fff" />
+                            <MaterialIcons name="delete" size={20} color="#EF4444" />
                           </Pressable>
-                        </>
-                      )}
-                    </>
-                  )}
-                </View>
+                        </View>
+                      </View>
+                    )}
+                  </>
+                )}
               </View>
             ))}
         </View>
@@ -470,24 +494,25 @@ const createStyles = (scheme: ColorScheme) =>
       color: Colors[scheme].textSecondary,
     },
     groupItem: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 16,
       borderBottomWidth: 1,
       borderBottomColor: Colors[scheme].border,
     },
-    groupInfo: {
+    groupContent: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      marginBottom: 12,
+    },
+    groupInfo: {
       flex: 1,
+      gap: 6,
     },
     groupAvatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 8,
+      width: 48,
+      height: 48,
+      borderRadius: 12,
       backgroundColor: '#10B981',
       alignItems: 'center',
       justifyContent: 'center',
@@ -496,66 +521,127 @@ const createStyles = (scheme: ColorScheme) =>
       backgroundColor: '#F59E0B',
     },
     groupAvatarText: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: 'bold',
       color: '#fff',
     },
-    groupDetails: {
-      flex: 1,
-    },
     groupName: {
-      fontSize: 16,
-      fontWeight: '500',
+      fontSize: 17,
+      fontWeight: '600',
       color: Colors[scheme].text,
-      marginBottom: 2,
+      lineHeight: 22,
     },
-    groupRole: {
+    groupBadgeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    groupBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    adminBadge: {
+      backgroundColor: '#FEF3C7',
+    },
+    memberBadge: {
+      backgroundColor: Colors[scheme].backgroundSecondary,
+    },
+    groupBadgeText: {
       fontSize: 12,
+      fontWeight: '600',
+    },
+    adminBadgeText: {
+      color: '#92400E',
+    },
+    memberBadgeText: {
       color: Colors[scheme].textSecondary,
     },
+    groupActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 12,
+    },
+    manageButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      flex: 1,
+      backgroundColor: '#EEF2FF',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#C7D2FE',
+    },
+    manageButtonText: {
+      color: '#6366F1',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    groupSecondaryActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    iconButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: Colors[scheme].backgroundSecondary,
+    },
+    groupEditContainer: {
+      gap: 12,
+    },
+    groupEditHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
     groupInput: {
+      flex: 1,
       fontSize: 16,
       fontWeight: '500',
       color: Colors[scheme].text,
       borderWidth: 1,
       borderColor: Colors[scheme].border,
-      borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
       backgroundColor: Colors[scheme].background,
     },
-    groupActions: {
+    groupEditActions: {
       flexDirection: 'row',
       gap: 8,
+      justifyContent: 'flex-end',
     },
-    actionButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 6,
+    editActionButton: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
+      gap: 6,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 8,
     },
-    manageButton: {
-      backgroundColor: '#6366F1',
-      paddingHorizontal: 12,
-      width: 'auto',
+    cancelEditButton: {
+      backgroundColor: Colors[scheme].backgroundSecondary,
     },
-    manageButtonText: {
-      color: '#fff',
-      fontSize: 12,
+    cancelEditButtonText: {
+      color: Colors[scheme].text,
+      fontSize: 14,
       fontWeight: '600',
     },
-    editButton: {
-      backgroundColor: '#F59E0B',
-    },
-    deleteButton: {
-      backgroundColor: '#EF4444',
-    },
-    saveButton: {
+    saveEditButton: {
       backgroundColor: '#3B82F6',
     },
-    cancelButton: {
-      backgroundColor: Colors[scheme].backgroundSecondary,
+    saveEditButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
     },
     errorContainer: {
       flexDirection: 'row',

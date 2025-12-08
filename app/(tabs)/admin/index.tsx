@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth, useThemedStyles } from '@/hooks';
@@ -73,11 +72,10 @@ export default function AdminDashboard() {
 
   const handleCardPress = (route: string) => {
     if (route === '/admin/jogos') {
-      // Temporariamente mostra alerta para jogos
-      Alert.alert('Em breve', 'A gestão de jogos será implementada em breve');
-    } else {
-      router.push(route as any);
+      // Temporariamente não faz nada para jogos
+      return;
     }
+    router.push(route as any);
   };
 
   if (loadingAdmin) {
