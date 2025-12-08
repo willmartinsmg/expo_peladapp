@@ -18,6 +18,9 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'person.3.fill': 'group',
+  'gamecontroller.fill': 'sports-esports',
+  'lock.fill': 'lock',
 } as IconMapping;
 
 /**
