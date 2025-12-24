@@ -7,6 +7,9 @@ import {
   ActivityIndicator,
   ScrollView,
   Modal,
+  TextInput,
+  Switch,
+  Platform,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useAuth, useThemedStyles } from '@/hooks';
@@ -22,8 +25,22 @@ interface Matchday {
   organizationId: number;
   date: string;
   numberPlayers: number;
+  playersTeams?: number;
+  numberTeams?: number;
   dedicatedGoalKeeper: boolean;
   location?: string;
+  listReleased?: boolean;
+}
+
+interface MatchdayForm {
+  date: Date | null;
+  time: Date | null;
+  numberPlayers: string;
+  playersTeams: string;
+  numberTeams: string;
+  dedicatedGoalKeeper: boolean;
+  location: string;
+  listReleased: boolean;
 }
 
 export default function GestaoJogo() {
@@ -38,6 +55,24 @@ export default function GestaoJogo() {
   const [showDelete, setShowDelete] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editingGame, setEditingGame] = useState<Matchday | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const initialForm: MatchdayForm = {
+    date: null,
+    time: null,
+    numberPlayers: '',
+    playersTeams: '',
+    numberTeams: '',
+    dedicatedGoalKeeper: false,
+    location: '',
+    listReleased: false,
+  };
+
+  const [formData, setFormData] = useState<MatchdayForm>(initialForm);
 
   const fetchGames = async () => {
     if (!groupId) return;
@@ -78,6 +113,103 @@ export default function GestaoJogo() {
       setDeletingId(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleCreate = () => {
+    setFormData(initialForm);
+    setShowCreate(true);
+  };
+
+  const handleEdit = (game: Matchday) => {
+    const gameDate = parseISO(game.date);
+    const adjusted = addMinutes(gameDate, gameDate.getTimezoneOffset());
+
+    setFormData({
+      date: adjusted,
+      time: adjusted,
+      numberPlayers: String(game.numberPlayers),
+      playersTeams: String(game.playersTeams || ''),
+      numberTeams: String(game.numberTeams || ''),
+      dedicatedGoalKeeper: game.dedicatedGoalKeeper,
+      location: game.location || '',
+      listReleased: game.listReleased || false,
+    });
+    setEditingGame(game);
+    setShowEdit(true);
+  };
+
+  const confirmCreate = async () => {
+    if (!groupId || !formData.date || !formData.time) return;
+    setSaving(true);
+    try {
+      // Combine date and time
+      const combinedDate = new Date(formData.date);
+      combinedDate.setHours(formData.time.getHours());
+      combinedDate.setMinutes(formData.time.getMinutes());
+      combinedDate.setSeconds(0);
+      combinedDate.setMilliseconds(0);
+
+      const dateTimeString = combinedDate.toISOString();
+
+      await apiClient.post('matchday', {
+        json: {
+          organizationId: groupId,
+          date: dateTimeString,
+          numberPlayers: parseInt(formData.numberPlayers) || 0,
+          playersTeams: parseInt(formData.playersTeams) || 0,
+          numberTeams: parseInt(formData.numberTeams) || 0,
+          dedicatedGoalKeeper: formData.dedicatedGoalKeeper,
+          location: formData.location || undefined,
+          listReleased: formData.listReleased,
+        },
+      });
+
+      setShowCreate(false);
+      setFormData(initialForm);
+      fetchGames();
+    } catch (err: any) {
+      setError(err?.message || 'Erro ao criar jogo');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmEdit = async () => {
+    if (!editingGame || !formData.date || !formData.time) return;
+    setSaving(true);
+    try {
+      // Combine date and time
+      const combinedDate = new Date(formData.date);
+      combinedDate.setHours(formData.time.getHours());
+      combinedDate.setMinutes(formData.time.getMinutes());
+      combinedDate.setSeconds(0);
+      combinedDate.setMilliseconds(0);
+
+      const dateTimeString = combinedDate.toISOString();
+
+      await apiClient.put('matchday', {
+        json: {
+          id: editingGame.id,
+          organizationId: editingGame.organizationId,
+          date: dateTimeString,
+          numberPlayers: parseInt(formData.numberPlayers) || 0,
+          playersTeams: parseInt(formData.playersTeams) || 0,
+          numberTeams: parseInt(formData.numberTeams) || 0,
+          dedicatedGoalKeeper: formData.dedicatedGoalKeeper,
+          location: formData.location || undefined,
+          listReleased: formData.listReleased,
+        },
+      });
+
+      setShowEdit(false);
+      setEditingGame(null);
+      setFormData(initialForm);
+      fetchGames();
+    } catch (err: any) {
+      setError(err?.message || 'Erro ao editar jogo');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -129,6 +261,7 @@ export default function GestaoJogo() {
           <Pressable
             style={[styles.createButton, !groupId && styles.createButtonDisabled]}
             disabled={!groupId}
+            onPress={handleCreate}
           >
             <MaterialIcons name="add" size={20} color="#fff" />
             <Text style={styles.createButtonText}>Novo Jogo</Text>
@@ -186,7 +319,10 @@ export default function GestaoJogo() {
                   <Text style={styles.actionButtonText}>Times</Text>
                 </Pressable>
 
-                <Pressable style={styles.iconActionButton}>
+                <Pressable
+                  style={styles.iconActionButton}
+                  onPress={() => handleEdit(game)}
+                >
                   <MaterialIcons name="edit" size={20} color="#F59E0B" />
                 </Pressable>
 
@@ -262,6 +398,361 @@ export default function GestaoJogo() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Modal de criação de jogo */}
+      <Modal
+        visible={showCreate}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCreate(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowCreate(false)}
+        >
+          <Pressable style={styles.formModalContent} onPress={(e) => e.stopPropagation()}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.formHeader}>
+                <Text style={styles.formTitle}>Criar Novo Jogo</Text>
+                <Pressable onPress={() => setShowCreate(false)}>
+                  <MaterialIcons name="close" size={24} color={Colors.dark.text} />
+                </Pressable>
+              </View>
+
+              <View style={styles.formFields}>
+                <View style={styles.formRow}>
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Data (dd/mm/aaaa)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.date ? format(formData.date, 'dd/MM/yyyy') : ''}
+                      onChangeText={(text) => {
+                        // Remove tudo que não é número
+                        const numbers = text.replace(/\D/g, '');
+
+                        if (numbers.length === 8) {
+                          // Tenta fazer parse da data dd/mm/yyyy
+                          const day = parseInt(numbers.substring(0, 2));
+                          const month = parseInt(numbers.substring(2, 4));
+                          const year = parseInt(numbers.substring(4, 8));
+
+                          if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900) {
+                            const newDate = new Date(year, month - 1, day);
+                            setFormData({ ...formData, date: newDate });
+                          }
+                        } else if (text === '') {
+                          setFormData({ ...formData, date: null });
+                        }
+                      }}
+                      placeholder="dd/mm/aaaa"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                      keyboardType="numeric"
+                      maxLength={10}
+                    />
+                  </View>
+
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Horário (hh:mm)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.time ? format(formData.time, 'HH:mm') : ''}
+                      onChangeText={(text) => {
+                        // Remove tudo que não é número
+                        const numbers = text.replace(/\D/g, '');
+
+                        if (numbers.length === 4) {
+                          // Tenta fazer parse do horário hh:mm
+                          const hours = parseInt(numbers.substring(0, 2));
+                          const minutes = parseInt(numbers.substring(2, 4));
+
+                          if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+                            const newTime = new Date();
+                            newTime.setHours(hours);
+                            newTime.setMinutes(minutes);
+                            setFormData({ ...formData, time: newTime });
+                          }
+                        } else if (text === '') {
+                          setFormData({ ...formData, time: null });
+                        }
+                      }}
+                      placeholder="hh:mm"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                      keyboardType="numeric"
+                      maxLength={5}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Local</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.location}
+                    onChangeText={(text) => setFormData({ ...formData, location: text })}
+                    placeholder="Endereço do local"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                  />
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Jogadores</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.numberPlayers}
+                      onChangeText={(text) => setFormData({ ...formData, numberPlayers: text })}
+                      placeholder="20"
+                      keyboardType="numeric"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                    />
+                  </View>
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Por Time</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.playersTeams}
+                      onChangeText={(text) => setFormData({ ...formData, playersTeams: text })}
+                      placeholder="10"
+                      keyboardType="numeric"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Número de Times</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.numberTeams}
+                    onChangeText={(text) => setFormData({ ...formData, numberTeams: text })}
+                    placeholder="2"
+                    keyboardType="numeric"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                  />
+                </View>
+
+                <View style={styles.switchField}>
+                  <Text style={styles.label}>Goleiro Dedicado</Text>
+                  <Switch
+                    value={formData.dedicatedGoalKeeper}
+                    onValueChange={(value) => setFormData({ ...formData, dedicatedGoalKeeper: value })}
+                    trackColor={{ false: '#767577', true: '#3B82F6' }}
+                    thumbColor={formData.dedicatedGoalKeeper ? '#fff' : '#f4f3f4'}
+                  />
+                </View>
+
+                <View style={styles.switchField}>
+                  <Text style={styles.label}>Lista Liberada</Text>
+                  <Switch
+                    value={formData.listReleased}
+                    onValueChange={(value) => setFormData({ ...formData, listReleased: value })}
+                    trackColor={{ false: '#767577', true: '#3B82F6' }}
+                    thumbColor={formData.listReleased ? '#fff' : '#f4f3f4'}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => setShowCreate(false)}
+                >
+                  <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modalButton, styles.modalSaveButton]}
+                  onPress={confirmCreate}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.modalSaveButtonText}>Criar Jogo</Text>
+                  )}
+                </Pressable>
+              </View>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal de edição de jogo */}
+      <Modal
+        visible={showEdit}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEdit(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowEdit(false)}
+        >
+          <Pressable style={styles.formModalContent} onPress={(e) => e.stopPropagation()}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.formHeader}>
+                <Text style={styles.formTitle}>Editar Jogo</Text>
+                <Pressable onPress={() => setShowEdit(false)}>
+                  <MaterialIcons name="close" size={24} color={Colors.dark.text} />
+                </Pressable>
+              </View>
+
+              <View style={styles.formFields}>
+                <View style={styles.formRow}>
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Data (dd/mm/aaaa)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.date ? format(formData.date, 'dd/MM/yyyy') : ''}
+                      onChangeText={(text) => {
+                        // Remove tudo que não é número
+                        const numbers = text.replace(/\D/g, '');
+
+                        if (numbers.length === 8) {
+                          // Tenta fazer parse da data dd/mm/yyyy
+                          const day = parseInt(numbers.substring(0, 2));
+                          const month = parseInt(numbers.substring(2, 4));
+                          const year = parseInt(numbers.substring(4, 8));
+
+                          if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900) {
+                            const newDate = new Date(year, month - 1, day);
+                            setFormData({ ...formData, date: newDate });
+                          }
+                        } else if (text === '') {
+                          setFormData({ ...formData, date: null });
+                        }
+                      }}
+                      placeholder="dd/mm/aaaa"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                      keyboardType="numeric"
+                      maxLength={10}
+                    />
+                  </View>
+
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Horário (hh:mm)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.time ? format(formData.time, 'HH:mm') : ''}
+                      onChangeText={(text) => {
+                        // Remove tudo que não é número
+                        const numbers = text.replace(/\D/g, '');
+
+                        if (numbers.length === 4) {
+                          // Tenta fazer parse do horário hh:mm
+                          const hours = parseInt(numbers.substring(0, 2));
+                          const minutes = parseInt(numbers.substring(2, 4));
+
+                          if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+                            const newTime = new Date();
+                            newTime.setHours(hours);
+                            newTime.setMinutes(minutes);
+                            setFormData({ ...formData, time: newTime });
+                          }
+                        } else if (text === '') {
+                          setFormData({ ...formData, time: null });
+                        }
+                      }}
+                      placeholder="hh:mm"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                      keyboardType="numeric"
+                      maxLength={5}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Local</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.location}
+                    onChangeText={(text) => setFormData({ ...formData, location: text })}
+                    placeholder="Endereço do local"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                  />
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Jogadores</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.numberPlayers}
+                      onChangeText={(text) => setFormData({ ...formData, numberPlayers: text })}
+                      placeholder="20"
+                      keyboardType="numeric"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                    />
+                  </View>
+                  <View style={[styles.formField, { flex: 1 }]}>
+                    <Text style={styles.label}>Por Time</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.playersTeams}
+                      onChangeText={(text) => setFormData({ ...formData, playersTeams: text })}
+                      placeholder="10"
+                      keyboardType="numeric"
+                      placeholderTextColor={Colors.dark.textSecondary}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formField}>
+                  <Text style={styles.label}>Número de Times</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.numberTeams}
+                    onChangeText={(text) => setFormData({ ...formData, numberTeams: text })}
+                    placeholder="2"
+                    keyboardType="numeric"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                  />
+                </View>
+
+                <View style={styles.switchField}>
+                  <Text style={styles.label}>Goleiro Dedicado</Text>
+                  <Switch
+                    value={formData.dedicatedGoalKeeper}
+                    onValueChange={(value) => setFormData({ ...formData, dedicatedGoalKeeper: value })}
+                    trackColor={{ false: '#767577', true: '#3B82F6' }}
+                    thumbColor={formData.dedicatedGoalKeeper ? '#fff' : '#f4f3f4'}
+                  />
+                </View>
+
+                <View style={styles.switchField}>
+                  <Text style={styles.label}>Lista Liberada</Text>
+                  <Switch
+                    value={formData.listReleased}
+                    onValueChange={(value) => setFormData({ ...formData, listReleased: value })}
+                    trackColor={{ false: '#767577', true: '#3B82F6' }}
+                    thumbColor={formData.listReleased ? '#fff' : '#f4f3f4'}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => setShowEdit(false)}
+                >
+                  <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modalButton, styles.modalSaveButton]}
+                  onPress={confirmEdit}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.modalSaveButtonText}>Salvar</Text>
+                  )}
+                </Pressable>
+              </View>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
     </View>
   );
 }
@@ -509,5 +1000,114 @@ const createStyles = (scheme: ColorScheme) =>
       color: '#fff',
       fontSize: 14,
       fontWeight: '600',
+    },
+    formModalContent: {
+      backgroundColor: Colors[scheme].card,
+      borderRadius: 12,
+      padding: 24,
+      width: '90%',
+      maxWidth: 500,
+      maxHeight: '85%',
+    },
+    formHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    formTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: Colors[scheme].text,
+    },
+    formFields: {
+      gap: 16,
+      marginBottom: 24,
+    },
+    formRow: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    formField: {
+      gap: 8,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: Colors[scheme].text,
+    },
+    input: {
+      backgroundColor: Colors[scheme].backgroundSecondary,
+      borderWidth: 1,
+      borderColor: Colors[scheme].border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      color: Colors[scheme].text,
+    },
+    switchField: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    modalSaveButton: {
+      backgroundColor: '#3B82F6',
+    },
+    modalSaveButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    datePickerButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: Colors[scheme].backgroundSecondary,
+      borderWidth: 1,
+      borderColor: Colors[scheme].border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    datePickerText: {
+      fontSize: 14,
+      color: Colors[scheme].text,
+      flex: 1,
+    },
+    pickerModalOverlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    pickerModalContent: {
+      backgroundColor: Colors[scheme].card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingBottom: 20,
+    },
+    pickerHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: Colors[scheme].border,
+    },
+    pickerHeaderButton: {
+      fontSize: 16,
+      color: Colors[scheme].primary,
+      minWidth: 80,
+    },
+    pickerHeaderButtonDone: {
+      fontWeight: '600',
+      textAlign: 'right',
+    },
+    pickerHeaderTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: Colors[scheme].text,
     },
   });
